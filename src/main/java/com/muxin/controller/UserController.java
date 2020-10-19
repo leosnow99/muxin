@@ -132,6 +132,14 @@ public class UserController {
 			return Result.errorMsg("参数错误!");
 		}
 		userService.operatorFriendRequest(sendUserId, acceptUserId, type);
-		return Result.ok();
+		return Result.ok(userService.queryMyFriends(acceptUserId));
+	}
+	
+	@GetMapping("/myFriends")
+	public Result myFriends(String userId) {
+		if (StringUtils.isEmpty(userId)) {
+			return Result.errorMsg("用户名不能为空!");
+		}
+		return Result.ok(userService.queryMyFriends(userId));
 	}
 }

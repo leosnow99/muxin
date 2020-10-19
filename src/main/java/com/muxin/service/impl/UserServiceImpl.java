@@ -10,6 +10,7 @@ import com.muxin.entry.Users;
 import com.muxin.entry.enums.OperatorFriendRequestTypeEnum;
 import com.muxin.entry.enums.SearchFriendsStatusEnum;
 import com.muxin.entry.vo.FriendRequestVO;
+import com.muxin.entry.vo.FriendsVO;
 import com.muxin.service.UserService;
 import com.muxin.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -171,6 +172,11 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 	
+	@Override
+	public List queryMyFriends(String userId) {
+		return usersRepository.queryFriendsByUserId(userId);
+	}
+	
 	//通过好友请求
 	private void passFriendRequest(String sendUserId, String acceptUserId) {
 		//保存好友
@@ -184,7 +190,7 @@ public class UserServiceImpl implements UserService {
 		friends.setId(String.valueOf(idWorker.nextId()));
 		friends.setMyUserId(sendUserId);
 		friends.setMyFriendId(acceptUserId);
-		
+		myFriendsRepository.save(friends);
 		//删除好友记录
 		deleteFriendRequest(sendUserId, acceptUserId);
 	}

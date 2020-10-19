@@ -1,11 +1,9 @@
 package com.muxin.service;
 
-import com.muxin.entry.FriendRequest;
 import com.muxin.entry.Users;
 import com.muxin.entry.enums.OperatorFriendRequestTypeEnum;
 import com.muxin.entry.enums.SearchFriendsStatusEnum;
 import com.muxin.entry.vo.FriendRequestVO;
-import com.muxin.entry.vo.UsersVo;
 
 import java.util.List;
 
@@ -40,4 +38,6 @@ public interface UserService {
 	//处理好友请求
 	void operatorFriendRequest(String sendUserId, String acceptUserId, OperatorFriendRequestTypeEnum typeEnum);
 	
+	//查询好友列表
+	List queryMyFriends(String userId);
 }

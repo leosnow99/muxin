@@ -6,7 +6,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 @Component
-public class NettyBoote implements ApplicationListener<ContextRefreshedEvent> {
+public class NettyBoot implements ApplicationListener<ContextRefreshedEvent> {
 	@Override
 	public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
 		if (contextRefreshedEvent.getApplicationContext().getParent() == null) {
