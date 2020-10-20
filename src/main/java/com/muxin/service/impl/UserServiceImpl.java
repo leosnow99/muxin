@@ -1,22 +1,23 @@
 package com.muxin.service.impl;
 
+import com.muxin.dao.ChatMsgRepository;
 import com.muxin.dao.FriendRequestRepository;
 import com.muxin.dao.MyFriendsRepository;
 import com.muxin.dao.UsersRepository;
-import com.muxin.entry.FastDFSFile;
-import com.muxin.entry.FriendRequest;
-import com.muxin.entry.MyFriends;
-import com.muxin.entry.Users;
+import com.muxin.entry.*;
+import com.muxin.entry.enums.MsgActionEnum;
+import com.muxin.entry.enums.MsgSignFlagEnum;
 import com.muxin.entry.enums.OperatorFriendRequestTypeEnum;
 import com.muxin.entry.enums.SearchFriendsStatusEnum;
+import com.muxin.entry.netty.DataContent;
+import com.muxin.entry.netty.UserChannelRel;
 import com.muxin.entry.vo.FriendRequestVO;
-import com.muxin.entry.vo.FriendsVO;
 import com.muxin.service.UserService;
 import com.muxin.utils.*;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,6 +44,9 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private QRCodeUtils qrCodeUtils;
 	
+	@Autowired
+	private ChatMsgRepository chatMsgRepository;
+	
 	public Users getById(String id) {
 		final Optional<Users> optional = usersRepository.findById(id);
 		Users user = null;
@@ -65,7 +69,7 @@ public class UserServiceImpl implements UserService {
 			user.setNickname(user.getUsername());
 			user.setPassword(MD5Utils.getMD5Str(user.getPassword()));
 			user.setFaceImageBig("");
-			user.setFaceImage("");
+			user.setFaceImage("http://218.198.180.38:8888/group1/M00/00/00/2sa0Jl-Oo-OAaQbnAAbQs0wo468289.png");
 			user.setQrcode(createQrCodePath(user.getId(), user.getUsername()));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -177,6 +181,31 @@ public class UserServiceImpl implements UserService {
 		return usersRepository.queryFriendsByUserId(userId);
 	}
 	
+	@Override
+	public String saveMsg(com.muxin.entry.netty.ChatMsg chatMsg) {
+		final ChatMsg msgDB = new ChatMsg();
+		msgDB.setId(String.valueOf(idWorker.nextId()));
+		
+		msgDB.setAcceptUserId(chatMsg.getReceiverId());
+		msgDB.setSendUserId(chatMsg.getSendId());
+		msgDB.setMsg(chatMsg.getMsg());
+		msgDB.setCreateTime(new Date());
+		msgDB.setSignFlag(MsgSignFlagEnum.unsigned.getType());
+		//保存到数据库
+		chatMsgRepository.save(msgDB);
+		return msgDB.getId();
+	}
+	
+	@Override
+	public void updateMsgSigned(List msgIdList) {
+		chatMsgRepository.updateMsgSigned(msgIdList);
+	}
+	
+	@Override
+	public List<ChatMsg> getUnReadMsg(String acceptUserId) {
+		return chatMsgRepository.findAllByAcceptUserIdAndSignFlag(acceptUserId, 0);
+	}
+	
 	//通过好友请求
 	private void passFriendRequest(String sendUserId, String acceptUserId) {
 		//保存好友
@@ -193,6 +222,14 @@ public class UserServiceImpl implements UserService {
 		myFriendsRepository.save(friends);
 		//删除好友记录
 		deleteFriendRequest(sendUserId, acceptUserId);
+		
+		//使用websocket主动推送消息到请求发送者, 更新他的通讯录列表为最新
+		final DataContent dataContent = new DataContent();
+		dataContent.setAction(MsgActionEnum.PULL_FRIEND.type);
+		final Channel channel = UserChannelRel.get(sendUserId);
+		if (channel != null) {
+			channel.writeAndFlush(new TextWebSocketFrame(JsonUtils.objectToJson(dataContent)));
+		}
 	}
 	
 	//删除好友请求

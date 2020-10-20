@@ -3,6 +3,7 @@ package com.muxin.service;
 import com.muxin.entry.Users;
 import com.muxin.entry.enums.OperatorFriendRequestTypeEnum;
 import com.muxin.entry.enums.SearchFriendsStatusEnum;
+import com.muxin.entry.netty.ChatMsg;
 import com.muxin.entry.vo.FriendRequestVO;
 
 import java.util.List;
@@ -40,4 +41,12 @@ public interface UserService {
 	
 	//查询好友列表
 	List queryMyFriends(String userId);
+	
+	//保存消息
+	String saveMsg(ChatMsg chatMsg);
+	
+	void updateMsgSigned(List msgIdList);
+	
+	//获取未签收信息列表
+	List<com.muxin.entry.ChatMsg> getUnReadMsg(String acceptUserId);
 }

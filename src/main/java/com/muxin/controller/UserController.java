@@ -1,5 +1,6 @@
 package com.muxin.controller;
 
+import com.muxin.entry.ChatMsg;
 import com.muxin.entry.Users;
 import com.muxin.entry.bo.UsersBO;
 import com.muxin.entry.enums.OperatorFriendRequestTypeEnum;
@@ -141,5 +142,16 @@ public class UserController {
 			return Result.errorMsg("用户名不能为空!");
 		}
 		return Result.ok(userService.queryMyFriends(userId));
+	}
+	
+	@PostMapping("/getUnReadMsgList")
+	public Result getUnReadMsgList(String acceptUserId) {
+		if (StringUtils.isEmpty(acceptUserId)) {
+			return Result.errorMsg("参数错误");
+		}
+		
+		//查询消息列表
+		final List<ChatMsg> unReadMsg = userService.getUnReadMsg(acceptUserId);
+		return Result.ok(unReadMsg);
 	}
 }
