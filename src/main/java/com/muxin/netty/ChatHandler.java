@@ -22,9 +22,9 @@ import java.util.List;
 //TextWebSocketFrame: 在netty中, 是用于为websocket 专门处理文本的对象, frame是消息到载体
 public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 	//用于记录和管理所有channel
-	private static final ChannelGroup users = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+	static final ChannelGroup users = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 	
-	protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame msg) throws Exception {
+	protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame msg) {
 		//获取发送来的消息
 		final String content = msg.text();
 		//获取channel
@@ -47,9 +47,9 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
 		} else if (action.equals(MsgActionEnum.CHAT.type)) {
 			//聊天类型的消息, 把聊天记录保存到数据库, 同时标记消息的签收状态[未签收]
 			final ChatMsg chatMsg = dataContent.getChatMsg();
-			final String msgText = chatMsg.getMsg();
+//			final String msgText = chatMsg.getMsg();
 			final String receiverId = chatMsg.getReceiverId();
-			final String sendId = chatMsg.getSendId();
+//			final String sendId = chatMsg.getSendId();
 			
 			//保存到消息数据库, 并且标记为未签收
 			final UserService userService = (UserService) SpringUtil.getBean("userServiceImpl");
@@ -95,27 +95,28 @@ public class ChatHandler extends SimpleChannelInboundHandler<TextWebSocketFrame>
 			
 		} else if (action.equals(MsgActionEnum.KEEPALIVE.type)) {
 			//心跳类型消息
-			
+			System.out.println("收到来自: " +channel.id().asShortText() +" 的心跳! ");
 		}
 	}
 	
 	//当客户端连接服务器端之后(打开链接)
 	//获取客户端的channel, 并且
 	@Override
-	public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+	public void handlerAdded(ChannelHandlerContext ctx) {
 		users.add(ctx.channel());
 	}
 	
 	
 	@Override
-	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-		// 当触发handlerRemoved, ChannelGroup会自动溢出对应客户端的channel
+	public void handlerRemoved(ChannelHandlerContext ctx) {
+		final String channelId = ctx.channel().id().asShortText();
+		System.out.println("客户端被溢出, channelId为: " + channelId);
+		
 		users.remove(ctx.channel());
-//		System.out.println(ctx.channel().id().asShortText());
 	}
 	
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		cause.printStackTrace();
 		//发生已成之后关闭连接(关闭channel), 随后从ChannelGroup移除
 		ctx.channel().close();
